@@ -6,6 +6,9 @@ import { NetworkClient } from './network/networkClient.js';
 import { RemotePlayerManager } from './world/remotePlayerManager.js';
 import { VoiceClient } from './audio/voiceClient.js';
 import { playJump, playAttack, playDamage } from './audio/sfx.js';
+import { customizationManager } from './ui/customizationManager.js';
+import { CharacterPreview } from './ui/characterPreview.js';
+import { faceCaptureModal } from './ui/faceCaptureModal.js';
 
 const app = document.getElementById('app');
 
@@ -42,10 +45,42 @@ overlay.className = 'overlay';
 overlay.innerHTML = `
   <div data-role="panel">
     <h1>Campfire Courtyard</h1>
+    <div data-role="customization-panel" class="customization-panel">
+      <h2>Customize Your Character</h2>
+      <div class="customization-content">
+        <div class="customization-controls">
+          <div class="customization-row">
+            <label>Head Color:</label>
+            <input type="color" data-role="head-color" value="${customizationManager.headColor}" />
+          </div>
+          <div class="customization-row">
+            <label>Body Color:</label>
+            <input type="color" data-role="body-color" value="${customizationManager.bodyColor}" />
+          </div>
+          <div class="customization-row">
+            <label>Clothing:</label>
+            <select data-role="clothing-select">
+              <option value="Torso1"${customizationManager.clothing === 'Torso1' ? ' selected' : ''}>Outfit 1</option>
+              <option value="Torso2"${customizationManager.clothing === 'Torso2' ? ' selected' : ''}>Outfit 2</option>
+              <option value="Torso3"${customizationManager.clothing === 'Torso3' ? ' selected' : ''}>Outfit 3</option>
+              <option value="none"${customizationManager.clothing === 'none' ? ' selected' : ''}>No Clothing</option>
+            </select>
+          </div>
+          <div class="customization-row face-upload">
+            <label>Face:</label>
+            <button type="button" data-role="upload-face-btn">📁 Upload Photo</button>
+            <button type="button" data-role="capture-face-btn">📷 Capture</button>
+            <button type="button" data-role="clear-face-btn" class="secondary">✕</button>
+          </div>
+          <div class="face-status" data-role="face-status">${customizationManager.faceImage ? '✓ Face set' : 'No face image'}</div>
+        </div>
+        <canvas data-role="character-preview" width="200" height="280"></canvas>
+      </div>
+    </div>
     <div data-role="name-block">
       <input type="text" name="displayName" placeholder="Campfire guest" maxlength="24" />
     </div>
-    <button type="button">Join the courtyard</button>
+    <button type="button" data-role="join-btn">Join the courtyard</button>
     <p class="hint" data-role="hint">
       Voice chat requires microphone access.<br />
       Use <strong>WASD</strong> to move &bull; <strong>Space</strong> to hop &bull; Mouse to look &bull; Esc to release cursor
@@ -53,6 +88,7 @@ overlay.innerHTML = `
   </div>
 `;
 container.appendChild(overlay);
+
 
 const hud = document.createElement('div');
 hud.className = 'hud';
@@ -94,8 +130,8 @@ deathPanel.innerHTML = `
 `;
 container.appendChild(deathPanel);
 
-const enterButton = overlay.querySelector('button');
-const nameInput = overlay.querySelector('input');
+const enterButton = overlay.querySelector('[data-role="join-btn"]');
+const nameInput = overlay.querySelector('input[name="displayName"]');
 const playersLabel = hud.querySelector('[data-role="players"]');
 const nameBlock = overlay.querySelector('[data-role="name-block"]');
 const hintText = overlay.querySelector('[data-role="hint"]');
@@ -104,6 +140,17 @@ const muteButton = controlsBar.querySelector('[data-role="mute"]');
 const rosterList = rosterPanel.querySelector('[data-role="player-list"]');
 const audioModeButton = controlsBar.querySelector('[data-role="audio-mode"]');
 const respawnButton = deathPanel.querySelector('[data-role="respawn"]');
+
+// Customization controls
+const headColorInput = overlay.querySelector('[data-role="head-color"]');
+const bodyColorInput = overlay.querySelector('[data-role="body-color"]');
+const clothingSelect = overlay.querySelector('[data-role="clothing-select"]');
+const uploadFaceBtn = overlay.querySelector('[data-role="upload-face-btn"]');
+const captureFaceBtn = overlay.querySelector('[data-role="capture-face-btn"]');
+const clearFaceBtn = overlay.querySelector('[data-role="clear-face-btn"]');
+const faceStatus = overlay.querySelector('[data-role="face-status"]');
+const previewCanvas = overlay.querySelector('[data-role="character-preview"]');
+const customizationPanel = overlay.querySelector('[data-role="customization-panel"]');
 
 if (
   !enterButton ||
@@ -116,10 +163,63 @@ if (
   !audioModeButton ||
   !rosterList ||
   !heartsPanel ||
-  !respawnButton
+  !respawnButton ||
+  !headColorInput ||
+  !bodyColorInput ||
+  !clothingSelect ||
+  !uploadFaceBtn ||
+  !captureFaceBtn ||
+  !clearFaceBtn ||
+  !faceStatus ||
+  !previewCanvas ||
+  !customizationPanel
 ) {
   throw new Error('UI failed to initialise');
 }
+
+// Initialize character preview
+const characterPreview = new CharacterPreview(previewCanvas);
+characterPreview.updateSettings(customizationManager.getSettings());
+
+// Customization event listeners
+headColorInput.addEventListener('input', (e) => {
+  customizationManager.setHeadColor(e.target.value);
+  characterPreview.updateSettings({ headColor: e.target.value });
+});
+
+bodyColorInput.addEventListener('input', (e) => {
+  customizationManager.setBodyColor(e.target.value);
+  characterPreview.updateSettings({ bodyColor: e.target.value });
+});
+
+clothingSelect.addEventListener('change', (e) => {
+  customizationManager.setClothing(e.target.value);
+  characterPreview.updateSettings({ clothing: e.target.value });
+});
+
+uploadFaceBtn.addEventListener('click', async () => {
+  const imageData = await faceCaptureModal.open('upload');
+  if (imageData) {
+    customizationManager.setFaceImage(imageData);
+    characterPreview.updateSettings({ faceImage: imageData });
+    faceStatus.textContent = '✓ Face set';
+  }
+});
+
+captureFaceBtn.addEventListener('click', async () => {
+  const imageData = await faceCaptureModal.open('camera');
+  if (imageData) {
+    customizationManager.setFaceImage(imageData);
+    characterPreview.updateSettings({ faceImage: imageData });
+    faceStatus.textContent = '✓ Face set';
+  }
+});
+
+clearFaceBtn.addEventListener('click', () => {
+  customizationManager.clearFaceImage();
+  characterPreview.updateSettings({ faceImage: null });
+  faceStatus.textContent = 'No face image';
+});
 
 const MAX_HEALTH = 6;
 const ATTACK_COOLDOWN_MS = 650;
@@ -154,7 +254,8 @@ enterButton.addEventListener('click', async () => {
       await network.join({
         name: desiredName,
         position: getLocalPosition(),
-        rotation: getLocalRotation()
+        rotation: getLocalRotation(),
+        customization: customizationManager.getSettings()
       });
       hasJoined = true;
       selfName = desiredName;

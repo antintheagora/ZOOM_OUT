@@ -225,3 +225,233 @@ canvas {
 .hit-flash.active {
   background: rgba(255, 48, 48, 0.25);
 }
+
+/* Character Customization Panel */
+.customization-panel {
+  background: rgba(20, 24, 36, 0.85);
+  border-radius: 1rem;
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
+  max-width: 460px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.customization-panel h2 {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #aeb6ce;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.customization-content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.customization-controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.customization-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.customization-row label {
+  flex: 0 0 85px;
+  font-size: 0.85rem;
+  color: #9aa3b8;
+}
+
+.customization-row input[type="color"] {
+  width: 44px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.customization-row input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.customization-row input[type="color"]::-webkit-color-swatch {
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.customization-row select {
+  flex: 1;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 16, 26, 0.8);
+  color: #f3f6ff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.customization-row select:hover {
+  border-color: rgba(241, 178, 74, 0.4);
+}
+
+.face-upload button {
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: none;
+  background: rgba(241, 178, 74, 0.85);
+  color: #1b1f29;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background 0.2s ease;
+}
+
+.face-upload button:hover {
+  background: rgba(255, 201, 120, 0.95);
+}
+
+.face-upload button.secondary {
+  background: rgba(80, 90, 110, 0.7);
+  color: #e0e4ed;
+  padding: 0.35rem 0.5rem;
+}
+
+.face-upload button.secondary:hover {
+  background: rgba(100, 110, 130, 0.8);
+}
+
+.face-status {
+  font-size: 0.75rem;
+  color: #7a8599;
+  padding-left: 90px;
+  margin-top: -0.3rem;
+}
+
+[data-role="character-preview"] {
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+/* Face Capture Modal */
+.face-capture-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 15, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.face-capture-content {
+  background: rgba(20, 24, 36, 0.95);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.face-capture-content h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  color: #f3f6ff;
+}
+
+.face-capture-content .hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #8b93a8;
+}
+
+.face-capture-preview {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.face-capture-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.face-capture-preview .face-mask {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(241, 178, 74, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2000px rgba(10, 14, 24, 0.7);
+  pointer-events: none;
+}
+
+.face-capture-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.face-capture-actions button {
+  padding: 0.6rem 1.25rem;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.face-capture-actions button.primary {
+  background: rgba(241, 178, 74, 0.9);
+  color: #1b1f29;
+}
+
+.face-capture-actions button.primary:hover {
+  background: rgba(255, 201, 120, 1);
+}
+
+.face-capture-actions button:not(.primary) {
+  background: rgba(60, 70, 90, 0.8);
+  color: #e0e4ed;
+}
+
+.face-capture-actions button:not(.primary):hover {
+  background: rgba(80, 90, 110, 0.9);
+}
+
+.face-capture-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.camera-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b93a8;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 5;
+}

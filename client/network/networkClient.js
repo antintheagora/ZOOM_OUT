@@ -14,8 +14,8 @@ export class NetworkClient extends EventTarget {
     return this.socket && this.socket.readyState === WebSocket.OPEN;
   }
 
-  async join({ name, position, rotation }) {
-    this.pendingJoin = { name, position, rotation };
+  async join({ name, position, rotation, customization }) {
+    this.pendingJoin = { name, position, rotation, customization };
 
     if (this.connected && this.playerId) {
       this._sendJoin(this.pendingJoin);
@@ -213,7 +213,8 @@ export class NetworkClient extends EventTarget {
       payload: {
         name: payload.name,
         position: payload.position,
-        rotation: payload.rotation
+        rotation: payload.rotation,
+        customization: payload.customization
       }
     };
     this.socket.send(JSON.stringify(message));

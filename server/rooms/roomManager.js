@@ -27,7 +27,8 @@ export class RoomManager {
         health: MAX_HEALTH,
         alive: true,
         lastAttack: 0
-      }
+      },
+      customization: {}
     };
     this.players.set(player.id, player);
     console.log(`[room:${this.roomId}] player joined ${player.id}`);
@@ -47,10 +48,11 @@ export class RoomManager {
       }
       switch (message.type) {
         case 'join': {
-          const { name, position, rotation } = message.payload ?? {};
+          const { name, position, rotation, customization } = message.payload ?? {};
           player.name = sanitizeName(name);
           player.state.position = toVector(position);
           player.state.rotation = toVector(rotation);
+          player.customization = sanitizeCustomization(customization);
           player.ready = true;
 
           this.send(player.id, {
@@ -204,8 +206,31 @@ function formatPublicState(player) {
     position: player.state.position,
     rotation: player.state.rotation,
     health: player.meta.health,
-    alive: player.meta.alive
+    alive: player.meta.alive,
+    customization: player.customization || {}
   };
+}
+
+function sanitizeCustomization(customization) {
+  if (!customization || typeof customization !== 'object') {
+    return {};
+  }
+  const result = {};
+  if (typeof customization.headColor === 'string') {
+    result.headColor = customization.headColor.slice(0, 20);
+  }
+  if (typeof customization.bodyColor === 'string') {
+    result.bodyColor = customization.bodyColor.slice(0, 20);
+  }
+  if (typeof customization.clothing === 'string') {
+    result.clothing = customization.clothing.slice(0, 20);
+  }
+  // Face image can be large base64, limit it
+  if (typeof customization.faceImage === 'string' && customization.faceImage.startsWith('data:image')) {
+    // Limit to ~100KB
+    result.faceImage = customization.faceImage.slice(0, 150000);
+  }
+  return result;
 }
 
 RoomManager.prototype.handleAttack = function handleAttack(player) {

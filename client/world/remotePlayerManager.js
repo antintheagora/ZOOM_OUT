@@ -4,12 +4,30 @@ import * as THREE from 'three';
 const BODY_HEIGHT = 1.5;
 const HIT_FLASH_DURATION = 0.45;
 const textureLoader = new THREE.TextureLoader();
-const torsoTexture = textureLoader.load('/assets/characters/Torso1.png', (tex) => {
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  tex.repeat.set(1, 1);
-});
+
+// Texture cache for clothing options
+const clothingTextureCache = new Map();
+
+function getClothingTexture(clothingId) {
+  if (!clothingId || clothingId === 'none') {
+    return null;
+  }
+  if (clothingTextureCache.has(clothingId)) {
+    return clothingTextureCache.get(clothingId);
+  }
+  const texture = textureLoader.load(`/assets/characters/${clothingId}.png`, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(1, 1);
+  });
+  clothingTextureCache.set(clothingId, texture);
+  return texture;
+}
+
+// Default torso texture
+const defaultTorsoTexture = getClothingTexture('Torso1');
+
 
 export class RemotePlayerManager {
   constructor(scene) {
@@ -34,10 +52,10 @@ export class RemotePlayerManager {
   }
 
   upsertPlayer(data) {
-    const { id, name, position, rotation, health, alive } = data;
+    const { id, name, position, rotation, health, alive, customization } = data;
     let entry = this.players.get(id);
     if (!entry) {
-      const mesh = createAvatarMesh(name ?? 'Guest', tintFromId(id));
+      const mesh = createAvatarMesh(name ?? 'Guest', tintFromId(id), customization || {});
       const { group, parts } = mesh;
       group.position.set(0, 0, 0);
       this.scene.add(group);
@@ -45,6 +63,7 @@ export class RemotePlayerManager {
         id,
         group,
         parts,
+        customization: customization || {},
         targetPosition: new THREE.Vector3(),
         lastPosition: new THREE.Vector3(),
         targetRotation: 0,
@@ -208,12 +227,19 @@ export class RemotePlayerManager {
   }
 }
 
-function createAvatarMesh(name, color) {
+function createAvatarMesh(name, color, customization = {}) {
   const group = new THREE.Group();
+  const { headColor, bodyColor, clothing, faceImage } = customization;
+
+  // Determine torso texture/color
+  const clothingTexture = clothing && clothing !== 'none'
+    ? getClothingTexture(clothing)
+    : defaultTorsoTexture;
 
   const torsoGeometry = new THREE.CylinderGeometry(0.32, 0.36, 1.0, 32, 1, true);
   const torsoMaterial = new THREE.MeshStandardMaterial({
-    map: torsoTexture,
+    map: clothingTexture,
+    color: bodyColor && (!clothing || clothing === 'none') ? new THREE.Color(bodyColor) : 0xffffff,
     roughness: 0.5,
     metalness: 0.05,
     transparent: true,
@@ -226,15 +252,48 @@ function createAvatarMesh(name, color) {
   torso.rotation.y = Math.PI;
   group.add(torso);
 
-  const headGeometry = new THREE.SphereGeometry(0.28, 16, 16);
-  const headMaterial = new THREE.MeshStandardMaterial({
-    color: 0xf5d8b4,
-    roughness: 0.6
-  });
-  const head = new THREE.Mesh(headGeometry, headMaterial);
-  head.position.y = 1.45;
-  head.castShadow = true;
-  group.add(head);
+  // Head with optional color and face texture
+  const headGeometry = new THREE.SphereGeometry(0.28, 32, 32, 0, Math.PI * 2, 0, Math.PI);
+  const headMaterialColor = headColor ? new THREE.Color(headColor) : 0xf5d8b4;
+
+  // Create head material - apply face texture to front half only if provided
+  let headMaterial;
+  if (faceImage) {
+    // Create two hemispheres: front with face texture, back with color
+    const faceTexture = textureLoader.load(faceImage);
+    faceTexture.colorSpace = THREE.SRGBColorSpace;
+
+    // Front hemisphere with face
+    const frontHeadGeometry = new THREE.SphereGeometry(0.28, 32, 32, -Math.PI / 2, Math.PI, 0, Math.PI);
+    const frontHeadMaterial = new THREE.MeshStandardMaterial({
+      map: faceTexture,
+      roughness: 0.6
+    });
+    const frontHead = new THREE.Mesh(frontHeadGeometry, frontHeadMaterial);
+    frontHead.position.y = 1.45;
+    frontHead.castShadow = true;
+    group.add(frontHead);
+
+    // Back hemisphere with color
+    const backHeadGeometry = new THREE.SphereGeometry(0.28, 32, 32, Math.PI / 2, Math.PI, 0, Math.PI);
+    const backHeadMaterial = new THREE.MeshStandardMaterial({
+      color: headMaterialColor,
+      roughness: 0.6
+    });
+    const backHead = new THREE.Mesh(backHeadGeometry, backHeadMaterial);
+    backHead.position.y = 1.45;
+    backHead.castShadow = true;
+    group.add(backHead);
+  } else {
+    headMaterial = new THREE.MeshStandardMaterial({
+      color: headMaterialColor,
+      roughness: 0.6
+    });
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 1.45;
+    head.castShadow = true;
+    group.add(head);
+  }
 
   const leftLeg = createLimb(0.11, 0.42);
   leftLeg.position.set(-0.14, 0.45, 0);
